@@ -1145,7 +1145,7 @@ class Test(BaseTest):
 
         self.render_config_template(
             path=os.path.abspath(self.working_dir) + "/log/test.log",
-            clean_inactive="10s",
+            clean_inactive="20s",
             ignore_older="5s"
         )
         os.mkdir(self.working_dir + "/log/")
@@ -1167,28 +1167,29 @@ class Test(BaseTest):
         # Check that ttl > 0 was set because of clean_inactive
         data = self.get_registry()
         assert len(data) == 1
-        assert data[0]["ttl"] == 10 * 1000 * 1000 * 1000
+        assert data[0]["ttl"] == 20 * 1000 * 1000 * 1000
 
-        # No config file which does not match the existing state
+        # New config file which does not match the existing clean_inactive
         self.render_config_template(
             path=os.path.abspath(self.working_dir) + "/log/test.log",
-            clean_inactive="20s",
+            clean_inactive="40s",
             ignore_older="5s",
         )
 
         filebeat = self.start_beat(output="filebeat2.log")
 
         # Wait until new state is written
+
         self.wait_until(
-            lambda: self.log_contains("Flushing spooler because of timeout. Events flushed: ", logfile="filebeat2.log"),
-            max_timeout=10)
+            lambda: self.log_contains("Flushing spooler because of timeout. Events flushed: ",
+            logfile="filebeat2.log"), max_timeout=10)
 
         filebeat.check_kill_and_wait()
 
         # Check that ttl was reset correctly
         data = self.get_registry()
         assert len(data) == 1
-        assert data[0]["ttl"] == 20 * 1000 * 1000 * 1000
+        assert data[0]["ttl"] == 40 * 1000 * 1000 * 1000
 
     def test_restart_state_reset_ttl_with_space(self):
         """
@@ -1198,7 +1199,7 @@ class Test(BaseTest):
 
         self.render_config_template(
             path=os.path.abspath(self.working_dir) + "/log/test file.log",
-            clean_inactive="10s",
+            clean_inactive="20s",
             ignore_older="5s"
         )
         os.mkdir(self.working_dir + "/log/")
@@ -1220,12 +1221,12 @@ class Test(BaseTest):
         # Check that ttl > 0 was set because of clean_inactive
         data = self.get_registry()
         assert len(data) == 1
-        assert data[0]["ttl"] == 10 * 1000 * 1000 * 1000
+        assert data[0]["ttl"] == 20 * 1000 * 1000 * 1000
 
         # new config file whith other clean_inactive
         self.render_config_template(
             path=os.path.abspath(self.working_dir) + "/log/test file.log",
-            clean_inactive="20s",
+            clean_inactive="40s",
             ignore_older="5s",
         )
 
@@ -1241,7 +1242,7 @@ class Test(BaseTest):
         # Check that ttl was reset correctly
         data = self.get_registry()
         assert len(data) == 1
-        assert data[0]["ttl"] == 20 * 1000 * 1000 * 1000
+        assert data[0]["ttl"] == 40 * 1000 * 1000 * 1000
 
 
     def test_restart_state_reset_ttl_no_clean_inactive(self):
